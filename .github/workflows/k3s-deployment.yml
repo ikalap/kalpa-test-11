@@ -43,7 +43,6 @@ jobs:
           password: ${{ secrets.SERVER_PASS }} # 引用 GitHub Secrets 中的密码
           script: |
             cd /home/ubuntu/apps/kalpa-test/
-            sudo su
             docker login ccr.ccs.tencentyun.com --username=${{ secrets.REGISTRY_USERNAME }} --password=${{ github.REGISTRY_PASSWORD }}
             docker build -t ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }} .
             docker push ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }}

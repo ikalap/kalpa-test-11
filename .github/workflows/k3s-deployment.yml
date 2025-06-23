@@ -18,32 +18,36 @@ jobs:
           cache: maven
       - name: Build with Maven
         run: mvn -B package --file pom.xml
+      - name: 修改deployment.yaml文件
+        run: |
+          sed -i 's/{image_name}/kalpa-test:${{ github.sha }}/g' deployment.yaml
+          sed -i 's/{image_tag}/${{ github.sha }}/g' deployment.yaml
 
-      # docker build，并push
-      - name: Docker build && push
-        uses: azure/docker-login@v1
+      # 4. 上传文件到服务器
+      - name: 上传文件到服务器
+        uses: appleboy/scp-action@v1
         with:
-          login-server: ccr.ccs.tencentyun.com
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-      - run: |
-          docker build -t ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }} .
-          docker push ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }}
+          host: ${{ secrets.SERVER_HOST }}     # 引用 GitHub Secrets 中的服务器 IP
+          username: ${{ secrets.SERVER_USER }} # 引用 GitHub Secrets 中的用户名
+          password: ${{ secrets.SERVER_PASS }} # 引用 GitHub Secrets 中的密码
+          source: "./docker-compose.yml,./Dockerfile,./target/*.jar"
+          target: /usr/local/apps/kalpa-test/    # 上传到服务器的目标目录
+          overwrite: true  #文件覆盖模式
 
-      # 让K8s应用deployment
-      - run: |
-          sed -i 's/{image_name}/ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }}/g' deployment.yaml
-      - name: deploy to cluster
-        uses: steebchen/kubectl@master
-        env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
-          KUBECTL_VERSION: "1.32"
+      # 5. 通过ssh执行shell命令，在服务器上构建镜像并部署
+      - name: 在服务器上构建镜像并部署
+        uses: appleboy/ssh-action@v1
         with:
-          args: apply -f deployment.yaml
-      - name: verify deployment
-        uses: steebchen/kubectl@master
-        env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
-          KUBECTL_VERSION: "1.32"
-        with:
-          args: '"rollout status -n default deployment/kalpa-tes"'
+          host: ${{ secrets.SERVER_HOST }}     # 引用 GitHub Secrets 中的服务器 IP
+          username: ${{ secrets.SERVER_USER }} # 引用 GitHub Secrets 中的用户名
+          password: ${{ secrets.SERVER_PASS }} # 引用 GitHub Secrets 中的密码
+          script: |
+            cd /usr/local/apps/kalpa-test/
+            docker login ccr.ccs.tencentyun.com --username=${{ secrets.REGISTRY_USERNAME }} --password=${{ github.REGISTRY_PASSWORD }}
+            docker build -t ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }} .
+            docker push ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }}
+            
+            docker-compose down                  
+            docker-compose up -d --build         
+            kubectl apply -f deployment.yaml
+            kubecttl rollout status -n default deployment/kalpa-test

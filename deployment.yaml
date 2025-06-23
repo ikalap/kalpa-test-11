@@ -17,7 +17,7 @@ spec:
       containers:
         - name: {image_name}
           #         这里的镜像会被jenkins 使用sed -i 命令自动替换
-          image: localhost:30500/{image_name}-{image_tag}
+          image: ccr.ccs.tencentyun.com/kalpa/{image_name}-{image_tag}
           ports:
             - containerPort: 8080
           env:

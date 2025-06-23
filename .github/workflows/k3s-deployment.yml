@@ -20,7 +20,7 @@ jobs:
         run: mvn -B package --file pom.xml
 
       # docker build，并push
-      - name: Docker push
+      - name: Docker build && push
         uses: azure/docker-login@v1
         with:
           login-server: ccr.ccs.tencentyun.com

@@ -30,7 +30,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}     # 引用 GitHub Secrets 中的服务器 IP
           username: ${{ secrets.SERVER_USER }} # 引用 GitHub Secrets 中的用户名
           password: ${{ secrets.SERVER_PASS }} # 引用 GitHub Secrets 中的密码
-          source: "./docker-compose.yml,./Dockerfile,./target/*.jar"
+          source: "./deployment.yaml,./Dockerfile,./target/*.jar"
           target: /home/ubuntu/apps/kalpa-test/    # 上传到服务器的目标目录
           overwrite: true  #文件覆盖模式
 
@@ -43,6 +43,7 @@ jobs:
           password: ${{ secrets.SERVER_PASS }} # 引用 GitHub Secrets 中的密码
           script: |
             cd /home/ubuntu/apps/kalpa-test/
+            sudo su
             docker login ccr.ccs.tencentyun.com --username=${{ secrets.REGISTRY_USERNAME }} --password=${{ github.REGISTRY_PASSWORD }}
             docker build -t ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }} .
             docker push ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }}

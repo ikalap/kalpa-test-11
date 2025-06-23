@@ -20,7 +20,7 @@ jobs:
         run: mvn -B package --file pom.xml
       - name: 修改deployment.yaml文件
         run: |
-          sed -i 's/{image_name}/kalpa-test:${{ github.sha }}/g' deployment.yaml
+          sed -i 's/{image_name}/kalpa-test/g' deployment.yaml
           sed -i 's/{image_tag}/${{ github.sha }}/g' deployment.yaml
 
       # 4. 上传文件到服务器
@@ -48,7 +48,5 @@ jobs:
             docker build -t ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }} .
             docker push ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }}
             
-            docker-compose down                  
-            docker-compose up -d --build         
             kubectl apply -f deployment.yaml
-            kubecttl rollout status -n default deployment/kalpa-test
+            kubectl rollout status -n default deployment/kalpa-test

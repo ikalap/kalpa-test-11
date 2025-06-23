@@ -47,6 +47,5 @@ jobs:
             docker login ccr.ccs.tencentyun.com --username=${{ secrets.REGISTRY_USERNAME }} --password=${{ github.REGISTRY_PASSWORD }}
             docker build -t ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }} .
             docker push ccr.ccs.tencentyun.com/kalpa/kalpa-test:${{ github.sha }}
-            
             kubectl apply -f deployment.yaml
             kubectl rollout status -n default deployment/kalpa-test
